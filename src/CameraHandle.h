@@ -13,6 +13,11 @@
 #include "EventCenter.h"
 
 class CameraHandle {
+    struct EventCheck {
+        string event;
+        int count;
+        unsigned long long lasttime;
+    };
 public:
     ~CameraHandle();
 
@@ -88,6 +93,7 @@ private:
     EventCenter *eventCenter;
     thread_pool *taskPool;
     Queue video;
+    map<string, EventCheck> eventChecks;
 };
 
 

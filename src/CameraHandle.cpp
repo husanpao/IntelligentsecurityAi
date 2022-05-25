@@ -85,9 +85,15 @@ bool CameraHandle::CheckSmoke(PredictionResult smoke) {
                 int s_w = smoke.eventInfo.right - smoke.eventInfo.left;
                 int h_w = head.eventInfo.right - head.eventInfo.left;
                 float bs = (float) s_w / (float) h_w;
+
                 if (bs > 0.75) {
                     return false;
                 }
+                float r = overlapRate(smoke, head);
+                SPDLOG_INFO("{} rate with head is :{:03.2f}  hold: {:03.2f}",
+                            smoke.event,
+                            r,
+                            smoke.hold);
                 break;
             }
         }
@@ -102,6 +108,11 @@ bool CameraHandle::CheckSmoke(PredictionResult smoke) {
                 if (bs > 0.75) {
                     return false;
                 }
+                float r = overlapRate(smoke, helmet);
+                SPDLOG_INFO("{} rate with helmet is :{:03.2f}  hold: {:03.2f}",
+                            smoke.event,
+                            r,
+                            smoke.hold);
                 break;
             }
         }
@@ -552,6 +563,22 @@ void CameraHandle::Handle(cv::Mat frame) {
             continue;
         }
         string showLabel = predictionResult.eventInfo.label;
+        if (eventChecks.count(showLabel) == 0) {
+            eventChecks.insert({showLabel, {showLabel, 1, gettimeofday_ms()}});
+        } else {
+            long long timeX = gettimeofday_ms() - eventChecks[showLabel].lasttime;
+            eventChecks[showLabel].lasttime = gettimeofday_ms();
+            if (timeX > 1000) {
+                eventChecks[showLabel].count = 1;
+                continue;
+            }
+            if (eventChecks[showLabel].count == 5) {
+                eventChecks[showLabel].count--;
+            } else {
+                eventChecks[showLabel].count++;
+            }
+        }
+
         if (this->appConfig->mappers.count(showLabel) != 0) {
             showLabel = this->appConfig->mappers[showLabel];
         }
@@ -559,6 +586,7 @@ void CameraHandle::Handle(cv::Mat frame) {
             showLabel = fmt::format("{0}_{1:.2f}", showLabel,
                                     predictionResult.eventInfo.hold);
         }
+
         this->yolo->drawRectangle(frame, predictionResult.eventInfo.left,
                                   predictionResult.eventInfo.top,
                                   predictionResult.eventInfo.right, predictionResult.eventInfo.bottom,
