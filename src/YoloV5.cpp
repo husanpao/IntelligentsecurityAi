@@ -230,6 +230,9 @@ std::vector<PredictionResult> YoloV5::prediction_my(cv::Mat img, set<string> alg
         if (modelInfo.name == "maskface" && algorithm_list.count("jzsb") == 0) {
             continue;
         }
+        if (modelInfo.name == "arm2" && algorithm_list.count("arm") == 0) {
+            continue;
+        }
         torch::Tensor pred = modelInfo.model.forward({data}).toTuple()->elements()[0].toTensor();
         std::vector<torch::Tensor> temp = non_max_suppression(pred, confThres, iouThres);
         std::vector<ImageResizeData> imgRDs;
@@ -239,7 +242,7 @@ std::vector<PredictionResult> YoloV5::prediction_my(cv::Mat img, set<string> alg
         for (int i = 0; i < rectangle.size(0); i++) {
             float hold = rectangle[i][4].item().toFloat();
             if (hold < modelInfo.similarity) {
-//                SPDLOG_INFO("modelname: {} hold:{} return", modelInfo.name, hold);
+//                SPDLOG_INFO("modelname: {} hold:{} yuzhi :{} return", modelInfo.name, hold, modelInfo.similarity);
                 continue;
             }
             //获取事件类型

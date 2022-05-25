@@ -324,7 +324,7 @@ void EventCenter::DealEvent(Event event) {
                         //如果间隔小于1秒，则更新最后违章事件发生时间
                         cameraEvent[event.cameraid].events[eventIterator->first].lasttime = event.lasttime;
                         //判断是不是连续发生大于2次
-                        if (cameraEvent[event.cameraid].events[eventIterator->first].count > 3) {
+                        if (cameraEvent[event.cameraid].events[eventIterator->first].count > 5) {
                             //满足条件了，准备发送数据
                             SPDLOG_INFO("[{}] event:{} waitting send msg ...", event.cameraid, eventIterator->first);
                             //构建一个待发送数据

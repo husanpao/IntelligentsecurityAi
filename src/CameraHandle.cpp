@@ -76,20 +76,32 @@ void CameraHandle::DownloadVideo() {
     this->url = video_str;
 }
 
-bool CameraHandle::CheckSmoke(PredictionResult predictionResult) {
+bool CameraHandle::CheckSmoke(PredictionResult smoke) {
     bool flag = false;
     if (this->allResultBoxes.count("head") != 0) {
-        for (auto refrent: this->allResultBoxes["head"]) {
-            flag = intersect(predictionResult, refrent);
+        for (auto head: this->allResultBoxes["head"]) {
+            flag = intersect(smoke, head);
             if (flag) {
+                int s_w = smoke.eventInfo.right - smoke.eventInfo.left;
+                int h_w = head.eventInfo.right - head.eventInfo.left;
+                float bs = (float) s_w / (float) h_w;
+                if (bs > 0.75) {
+                    return false;
+                }
                 break;
             }
         }
     }
     if (this->allResultBoxes.count("helmet") != 0 && !flag) {
-        for (const auto &refrent: this->allResultBoxes["helmet"]) {
-            flag = intersect(predictionResult, refrent);
+        for (const auto &helmet: this->allResultBoxes["helmet"]) {
+            flag = intersect(smoke, helmet);
             if (flag) {
+                int s_w = smoke.eventInfo.right - smoke.eventInfo.left;
+                int h_w = helmet.eventInfo.right - helmet.eventInfo.left;
+                float bs = (float) s_w / (float) h_w;
+                if (bs > 0.75) {
+                    return false;
+                }
                 break;
             }
         }
@@ -236,11 +248,17 @@ bool CameraHandle::CheckDbxzr(PredictionResult &db) {
 }
 
 bool CameraHandle::CheckRydd(PredictionResult rydd) {
-    return CheckWithPerson(rydd);
+    int w = rydd.eventInfo.right - rydd.eventInfo.left;
+    int h = rydd.eventInfo.bottom - rydd.eventInfo.top;
+    float bs = (float) w / (float) h;
+    if (bs < 1.3) {
+        return false;
+    }
+    return CheckWithPerson(rydd, 0.2);
 }
 
 bool CameraHandle::CheckWcgzf(PredictionResult wcgzf) {
-    bool flag = CheckWithPerson(wcgzf);
+    bool flag = CheckWithPerson(wcgzf, 0.1);
     if (!flag) {
         return flag;
     }
@@ -249,26 +267,36 @@ bool CameraHandle::CheckWcgzf(PredictionResult wcgzf) {
         for (auto refrent: this->allResultBoxes["head"]) {
             flag = intersect(wcgzf, refrent);
             if (flag) {
-                break;
+                return false;
             }
         }
     }
-    if (flag) {
-        return false;
-    }
-    if (this->allResultBoxes.count("helmet") != 0 && !flag) {
+    if (this->allResultBoxes.count("helmet") != 0) {
         for (const auto &refrent: this->allResultBoxes["helmet"]) {
             flag = intersect(wcgzf, refrent);
             if (flag) {
-                break;
+                return false;
             }
         }
     }
-    if (!flag) {
-        return true;
-    } else {
-        return false;
+    if (this->allResultBoxes.count("onlyjyst") != 0) {
+        for (const auto &onlyjyst: this->allResultBoxes["onlyjyst"]) {
+            flag = intersect(wcgzf, onlyjyst);
+            if (flag) {
+                return false;
+            }
+        }
     }
+
+    if (this->allResultBoxes.count("pifu") != 0) {
+        for (const auto &pifu: this->allResultBoxes["pifu"]) {
+            flag = intersect(wcgzf, pifu);
+            if (flag) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 bool CameraHandle::CheckWdJz(PredictionResult person) {
@@ -317,11 +345,33 @@ bool CameraHandle::UpdateAlgorithm_list(set<string> algorithm_list) {
     return true;
 }
 
-bool CameraHandle::CheckWithPerson(PredictionResult predictionResult) {
+bool CameraHandle::CheckWithPerson(PredictionResult predictionResult, float rate) {
     bool flag = false;
     if (this->allResultBoxes.count("person") != 0) {
-        for (const auto &refrent: this->allResultBoxes["person"]) {
-            flag = intersect(predictionResult, refrent);
+        for (const auto &person: this->allResultBoxes["person"]) {
+            flag = intersect(predictionResult, person);
+            if (rate != 0 && flag) {
+//                cv::Mat tempFrame = cv::imread("C:\\Users\\uma-pc001\\Desktop\\test.png");
+//                this->yolo->drawRectangle(tempFrame, predictionResult.eventInfo.left,
+//                                          predictionResult.eventInfo.top,
+//                                          predictionResult.eventInfo.right, predictionResult.eventInfo.bottom,
+//                                          predictionResult.event);
+//                this->yolo->drawRectangle(tempFrame, person.eventInfo.left,
+//                                          person.eventInfo.top,
+//                                          person.eventInfo.right, person.eventInfo.bottom,
+//                                          person.event);
+//                cv::imshow("testwindow", tempFrame);
+//                cv::waitKey(1);
+                float r = overlapRate(predictionResult, person);
+//                SPDLOG_INFO("{} rate with person is :{:03.2f} rate is:{:03.2f} hold: {:03.2f}", predictionResult.event,
+//                            r, rate,
+//                            predictionResult.hold);
+                if (r > rate) {
+                    return true;
+                } else {
+                    flag = false;
+                }
+            }
             if (flag) {
                 break;
             }
@@ -332,6 +382,29 @@ bool CameraHandle::CheckWithPerson(PredictionResult predictionResult) {
 
 bool CameraHandle::CheckWithWrft(PredictionResult wrft) {
     return CheckWithPerson(wrft);
+}
+
+bool CameraHandle::CheckWithHead(PredictionResult head) {
+    bool flag = false;
+    flag = CheckWithPerson(head, 0.03);
+    if (!flag) {
+        return false;
+    }
+    if (this->allResultBoxes.count("helmet") != 0) {
+        for (const auto &helmet: this->allResultBoxes["helmet"]) {
+            flag = intersect(head, helmet);
+            if (flag) {
+                float r = overlapRate(head, helmet);
+                SPDLOG_INFO("{} rate with helmet is :{:03.2f} rate is:{:03.2f} hold: {:03.2f}", head.event,
+                            r, 0.5,
+                            head.hold);
+                if (r > 0.5) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
 }
 
 
@@ -381,7 +454,7 @@ void CameraHandle::Handle(cv::Mat frame) {
                     this->allResultBoxes[tempPredictionResult.event] = temp;
                 }
             }
-            string label = "helmet,gz1,gz2,onlyjyst,face,ydjz,safebelt,badsafebelt";
+            string label = "helmet,gz1,gz2,onlyjyst,face,ydjz,safebelt,badsafebelt,pifu";
             map<string, PDRV>::iterator eventIterator;
             for (eventIterator = this->allResultBoxes.begin();
                  eventIterator != this->allResultBoxes.end(); eventIterator++) {
@@ -390,6 +463,9 @@ void CameraHandle::Handle(cv::Mat frame) {
                 }
                 for (PredictionResult tempPredictionResult: eventIterator->second) {
                     flag = true;
+                    if (tempPredictionResult.event == "head") {
+                        flag = CheckWithHead(tempPredictionResult);
+                    }
                     //判断吸烟
                     if (tempPredictionResult.event == "smoke") {
                         flag = CheckSmoke(tempPredictionResult);
@@ -406,7 +482,7 @@ void CameraHandle::Handle(cv::Mat frame) {
                         flag = CheckRydd(tempPredictionResult);
                     }
                     if (tempPredictionResult.event == "gzfzr" || tempPredictionResult.event == "zzfzr") {
-                        flag = CheckWithPerson(tempPredictionResult);
+                        flag = CheckWithPerson(tempPredictionResult, 0.15);
                     }
                     //判定未穿工作服
                     if (tempPredictionResult.event == "wcgzf") {
@@ -421,7 +497,7 @@ void CameraHandle::Handle(cv::Mat frame) {
                         }
                     }
                     //判断驾照是否带
-                    if (tempPredictionResult.event == "person") {
+                    if (tempPredictionResult.event == "person" && algorithm_list.count("jzsb") != 0) {
                         flag = CheckWdJz(tempPredictionResult);
                         if (flag) {
                             tempPredictionResult.event = "wdjz";
@@ -435,6 +511,9 @@ void CameraHandle::Handle(cv::Mat frame) {
                             tempPredictionResult.event = "dbxzr";
                             tempPredictionResult.eventInfo.label = "dbxzr";
                         }
+                    }
+                    if (tempPredictionResult.event == "person") {
+                        flag = false;
                     }
                     if (flag) {
                         this->predictionsBoxes.push_back(tempPredictionResult);

@@ -76,7 +76,10 @@ string PictureHandle::writeImg(cv::Mat &frame, string cameraid, string event) {
 void PictureHandle::startPrediction() {
     for (auto iter = this->cameraPics.begin(); iter != this->cameraPics.end(); ++iter) {
         string temppic = fmt::format("temp/{}.jpg", gettimeofday_ms());
-        httpDownload(iter->second.c_str(), temppic.c_str());
+        int ret = httpDownload(iter->second.c_str(), temppic.c_str());
+        if (ret != 0) {
+            continue;
+        }
         auto frame = cv::imread(temppic);
         if (frame.empty()) {
             continue;

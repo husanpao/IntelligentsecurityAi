@@ -67,6 +67,8 @@ std::string WStringToString(const std::wstring &wstr);
 
 bool intersect(PredictionResult a, PredictionResult b);
 
+float overlapRate(PredictionResult a, PredictionResult b);
+
 struct AppConfig {
     string rtmp_server;
     string static_path;

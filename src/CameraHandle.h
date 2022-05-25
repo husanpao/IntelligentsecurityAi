@@ -58,9 +58,11 @@ private:
 
     bool CheckWcgzf(PredictionResult wcgzf);
 
-    bool CheckWithPerson(PredictionResult person);
+    bool CheckWithPerson(PredictionResult person, float rate = 0.0);
 
     bool CheckWithWrft(PredictionResult wrft);
+
+    bool CheckWithHead(PredictionResult head);
 
 
 private:
