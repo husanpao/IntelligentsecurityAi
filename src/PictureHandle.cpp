@@ -75,24 +75,52 @@ string PictureHandle::writeImg(cv::Mat &frame, string cameraid, string event) {
 
 void PictureHandle::startPrediction() {
     for (auto iter = this->cameraPics.begin(); iter != this->cameraPics.end(); ++iter) {
-        string temppic = fmt::format("temp/{}.jpg", gettimeofday_ms());
-        int ret = httpDownload(iter->second.c_str(), temppic.c_str());
+        string fullpath = hv::replace(this->appConfig->api_host, "/api", "");
+        string temppic = fmt::format("temp/{}_{}.jpg", iter->first, gettimeofday_ms());
+        fullpath.append(iter->second);
+        int ret = httpDownload(fullpath.c_str(), temppic.c_str());
+        SPDLOG_INFO("url:{} download:{} finish...", fullpath, temppic);
         if (ret != 0) {
+            remove(temppic.c_str());
             continue;
         }
-        auto frame = cv::imread(temppic);
-        if (frame.empty()) {
+        auto srcFrame = cv::imread(temppic);
+        if (srcFrame.empty()) {
+            remove(temppic.c_str());
             continue;
         }
+        int nRows = 1280;
+        int nCols = srcFrame.cols * 1280 / srcFrame.rows;
+        cv::Mat frame(nRows, nCols, srcFrame.type());
+        resize(srcFrame, frame, frame.size(), 0, 0, cv::INTER_LINEAR);
+        SPDLOG_INFO("{} read pic success", temppic);
         PDRV tempBoxs = this->yolo->prediction_my(frame, this->algorithm_list);
+        SPDLOG_INFO("{} pred count...", temppic, tempBoxs.size());
         if (tempBoxs.size() > 0) {
+            PDRV headHelmet;
+            PDRV persons;
             for (PredictionResult drawInfo: tempBoxs) {
+                if (drawInfo.event == "helmet" || drawInfo.event == "head") {
+                    headHelmet.push_back(drawInfo);
+                }
                 if (drawInfo.event == "person") {
-                    this->drawImg(frame, drawInfo);
+                    persons.push_back(drawInfo);
                 }
             }
-            auto url = this->writeImg(frame, iter->first, "person");
-            this->result.insert({iter->first, url});
+            bool flag = false;
+            for (PredictionResult person: persons) {
+                SPDLOG_INFO("{} find person...", temppic);
+                for (PredictionResult head: headHelmet) {
+                    if (intersect(head, person)) {
+                        this->drawImg(frame, person);
+                        flag = true;
+                    }
+                }
+            }
+            if (flag) {
+                auto url = this->writeImg(frame, iter->first, "person");
+                this->result.insert({iter->first, url});
+            }
         }
         remove(temppic.c_str());
     }

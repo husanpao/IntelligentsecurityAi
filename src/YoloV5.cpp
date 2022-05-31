@@ -242,7 +242,7 @@ std::vector<PredictionResult> YoloV5::prediction_my(cv::Mat img, set<string> alg
         for (int i = 0; i < rectangle.size(0); i++) {
             float hold = rectangle[i][4].item().toFloat();
             if (hold < modelInfo.similarity) {
-//                SPDLOG_INFO("modelname: {} hold:{} yuzhi :{} return", modelInfo.name, hold, modelInfo.similarity);
+                SPDLOG_INFO("modelname: {} hold:{} yuzhi :{} return", modelInfo.name, hold, modelInfo.similarity);
                 continue;
             }
             //获取事件类型
