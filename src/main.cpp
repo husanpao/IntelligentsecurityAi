@@ -123,7 +123,7 @@ static void onTimer(TimerID timerID, string url, int port) {
 
 int main(int argc, char *argv[]) {
     SetUnhandledExceptionFilter(ExceptionFilter);
-    SetConsoleTitle("智能安监管控平台-20220527"); // 设置窗口标题
+    SetConsoleTitle("智能安监管控平台-20220616"); // 设置窗口标题
     config *c = new config("./config.conf");
     int port = c->readInt("APP", "port", "1360");
     if (argc > 1) {

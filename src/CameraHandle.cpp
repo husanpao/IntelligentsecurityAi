@@ -171,17 +171,9 @@ bool CameraHandle::CheckWdAqd(PredictionResult offground) {
 
 bool CameraHandle::CheckWdJyst(PredictionResult predictionResult) {
     bool flag = false;
-    if (this->allResultBoxes.count("gz1") != 0) {
-        for (auto refrent: this->allResultBoxes["gz1"]) {
-            flag = intersect(predictionResult, refrent);
-            if (flag) {
-                break;
-            }
-        }
-    }
-    if (this->allResultBoxes.count("gz2") != 0 && !flag) {
-        for (const auto &refrent: this->allResultBoxes["gz2"]) {
-            flag = intersect(predictionResult, refrent);
+    if (this->allResultBoxes.count("gz") != 0) {
+        for (auto gz: this->allResultBoxes["gz"]) {
+            flag = intersect(predictionResult, gz);
             if (flag) {
                 break;
             }
@@ -465,7 +457,7 @@ void CameraHandle::Handle(cv::Mat frame) {
                     this->allResultBoxes[tempPredictionResult.event] = temp;
                 }
             }
-            string label = "helmet,gz1,gz2,onlyjyst,face,ydjz,safebelt,badsafebelt,pifu";
+            string label = "helmet,gz,onlyjyst,face,ydjz,safebelt,badsafebelt,pifu";
             map<string, PDRV>::iterator eventIterator;
             for (eventIterator = this->allResultBoxes.begin();
                  eventIterator != this->allResultBoxes.end(); eventIterator++) {
@@ -572,7 +564,7 @@ void CameraHandle::Handle(cv::Mat frame) {
                 eventChecks[showLabel].count = 1;
                 continue;
             }
-            if (eventChecks[showLabel].count == 5) {
+            if (eventChecks[showLabel].count == 3) {
                 eventChecks[showLabel].count--;
             } else {
                 eventChecks[showLabel].count++;
