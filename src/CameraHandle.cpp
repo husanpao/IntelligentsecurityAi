@@ -31,7 +31,7 @@ CameraHandle::CameraHandle(AppConfig *appConfig, string url, string id, set<stri
 //                                        this->appConfig->mappers, this->appConfig->interval);
     this->taskPool = new thread_pool(1);
     this->notRender.insert("person");
-    this->notRender.insert("aqwl");
+//    this->notRender.insert("aqwl");
     this->notRender.insert("gzfzr");
     this->notRender.insert("zzfzr");
     this->notRender.insert("helmet");
@@ -216,17 +216,18 @@ bool CameraHandle::CheckDbxzr(PredictionResult &db) {
                 }
                 qflag = true;
             }
+
             width = db.eventInfo.right - db.eventInfo.left;
             int personwidth = person.eventInfo.right - person.eventInfo.left;
             int ps = width / personwidth;
-//            flag = intersect(db, person);
-            if (person.eventInfo.left > db.eventInfo.left &&
-                person.eventInfo.top > db.eventInfo.top &&
-                person.eventInfo.right < db.eventInfo.right &&
-                person.eventInfo.bottom < db.eventInfo.bottom) {
-                flag = true;
-//                break;
-            }
+            flag = intersect(db, person);
+//            if (person.eventInfo.left > db.eventInfo.left &&
+//                person.eventInfo.top > db.eventInfo.top &&
+//                person.eventInfo.right < db.eventInfo.right &&
+//                person.eventInfo.bottom < db.eventInfo.bottom) {
+//                flag = true;
+////                break;
+//            }
 //            SPDLOG_INFO("db width:{} person width:{} beisu:{} flag:{} qflag:{}", width, personwidth, ps, flag, qflag);
             if (flag && qflag ? ps < 25 && ps > 6 : ps < 11 && ps > 7) {
                 break;

@@ -4,64 +4,14 @@
 #include "config.h"
 #include "CameraHandle.h"
 #include "Controller.h"
-#include <DbgHelp.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/daily_file_sink.h>
 #include "hv/EventLoop.h"
+#include "crash_exception.h"
 
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE//必须定义这个宏,才能输出文件名和行号
 using namespace hv;
 
-int GenerateMiniDump(PEXCEPTION_POINTERS pExceptionPointers) {
-    // 定义函数指针
-    typedef BOOL(WINAPI *MiniDumpWriteDumpT)(
-            HANDLE,
-            DWORD,
-            HANDLE,
-            MINIDUMP_TYPE,
-            PMINIDUMP_EXCEPTION_INFORMATION,
-            PMINIDUMP_USER_STREAM_INFORMATION,
-            PMINIDUMP_CALLBACK_INFORMATION
-    );
-    // 从 "DbgHelp.dll" 库中获取 "MiniDumpWriteDump" 函数
-    MiniDumpWriteDumpT pfnMiniDumpWriteDump = NULL;
-    HMODULE hDbgHelp = LoadLibrary("DbgHelp.dll");
-    if (NULL == hDbgHelp) {
-        return EXCEPTION_CONTINUE_EXECUTION;
-    }
-    pfnMiniDumpWriteDump = (MiniDumpWriteDumpT) GetProcAddress(hDbgHelp, "MiniDumpWriteDump");
-
-    if (NULL == pfnMiniDumpWriteDump) {
-        FreeLibrary(hDbgHelp);
-        return EXCEPTION_CONTINUE_EXECUTION;
-    }
-
-    HANDLE hDumpFile = CreateFile("app.dmp", GENERIC_READ | GENERIC_WRITE,
-                                  FILE_SHARE_WRITE | FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
-    if (INVALID_HANDLE_VALUE == hDumpFile) {
-        FreeLibrary(hDbgHelp);
-        return EXCEPTION_CONTINUE_EXECUTION;
-    }
-    // 写入 dmp 文件
-    MINIDUMP_EXCEPTION_INFORMATION expParam;
-    expParam.ThreadId = GetCurrentThreadId();
-    expParam.ExceptionPointers = pExceptionPointers;
-    expParam.ClientPointers = FALSE;
-    pfnMiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(),
-                         hDumpFile, MiniDumpWithDataSegs, (pExceptionPointers ? &expParam : NULL), NULL, NULL);
-    // 释放文件
-    CloseHandle(hDumpFile);
-    FreeLibrary(hDbgHelp);
-    return EXCEPTION_EXECUTE_HANDLER;
-}
-
-LONG WINAPI ExceptionFilter(LPEXCEPTION_POINTERS lpExceptionInfo) {
-    // 这里做一些异常的过滤或提示
-    if (IsDebuggerPresent()) {
-        return EXCEPTION_CONTINUE_SEARCH;
-    }
-    return GenerateMiniDump(lpExceptionInfo);
-}
 
 void FFMPEG_LOG(void *ptr, int level, const char *fmt, va_list vl) {
     if (level < AV_LOG_WARNING) {
@@ -193,6 +143,10 @@ int main(int argc, char *argv[]) {
                 } else if (msgType == 205) {
                     result = control->LookPic(dom["data"]);
                     msgText = "LookPic MSG";
+                } else if (msgType == 206) {
+                    result = control->SnapPic(dom["data"]);
+
+                    msgText = "SnapPic MSG";
                 } else {
                     result = "{\"code\":500,\"message\":\"error\",\"data\":\"UNKnow msgType\"}";
                 }

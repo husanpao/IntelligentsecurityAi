@@ -4,6 +4,7 @@
 
 #include "Controller.h"
 #include "PictureHandle.h"
+#include "SnapHandle.h"
 
 Controller::~Controller() {}
 
@@ -63,7 +64,7 @@ string Controller::AddFace(rapidjson::Value &data) {
         }
     }
     rapidjson::StringBuffer buf;
-    rapidjson::Writer <rapidjson::StringBuffer> writer(buf);
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
     writer.StartObject();
     writer.Key("code");
     writer.Int(200);
@@ -76,8 +77,8 @@ string Controller::AddFace(rapidjson::Value &data) {
 }
 
 string Controller::MAVideo(rapidjson::Value &data) {
-    vector <string> add;
-    vector <string> remove;
+    vector<string> add;
+    vector<string> remove;
     if (data.HasMember("CAMERA_ADD") && data["CAMERA_ADD"].IsObject()) {
         rapidjson::Value &camera_add = data["CAMERA_ADD"];
         if (camera_add.IsObject()) {
@@ -85,7 +86,7 @@ string Controller::MAVideo(rapidjson::Value &data) {
                 string cameraid = camera_add["CAMERA_CODE"].GetString();
                 string camera_url = camera_add["STREAM"].GetString();
                 if (camera_url != "" && cameraid != "") {
-                    set <string> algorithm_list;
+                    set<string> algorithm_list;
                     if (data.HasMember("ALGORITHM_LIST") && data["ALGORITHM_LIST"].IsString()) {
                         string algorithmstr = data["ALGORITHM_LIST"].GetString();
                         hv::StringList temp = hv::split(algorithmstr, ',');
@@ -149,7 +150,7 @@ string Controller::MAVideo(rapidjson::Value &data) {
         }
     }
     rapidjson::StringBuffer buf;
-    rapidjson::Writer <rapidjson::StringBuffer> writer(buf);
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
     writer.StartObject();
     writer.Key("code");
     writer.Int(200);
@@ -185,12 +186,42 @@ string Controller::MAVideo(rapidjson::Value &data) {
     return result;
 }
 
+string Controller::SnapPic(rapidjson::Value &data) {
+    string result = "";
+    if (data.IsObject()) {
+        const rapidjson::Value &obj = data;
+        if (obj.HasMember("STREAM") && obj.HasMember("CAMERA_CODE")) {
+            set<string> algorithm_list = {"helmet"};
+            string stream = obj["STREAM"].GetString();
+            string camera_code = obj["CAMERA_CODE"].GetString();
+            thread t([this, stream, camera_code, algorithm_list]() {
+                SnapHandle *snapHandle = new SnapHandle(this->appconfig, this->yolov5, camera_code, stream,
+                                                        algorithm_list);
+                snapHandle->startPrediction();
+                delete snapHandle;
+            });
+            t.detach();
+        }
+    }
+    rapidjson::StringBuffer buf;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
+    writer.StartObject();
+    writer.Key("code");
+    writer.Int(200);
+    writer.Key("message");
+    writer.String("success");
+    writer.Key("data");
+    writer.String(result.c_str());
+    writer.EndObject();
+    return buf.GetString();
+}
+
 string Controller::LookPic(rapidjson::Value &data) {
     string result = "";
     if (data.IsArray()) {
         rapidjson::Value &objs = data.GetArray();
         size_t len = objs.Size();
-        map <string, string> cameraPics;
+        map<string, string> cameraPics;
         for (size_t i = 0; i < len; i++) {
             const rapidjson::Value &obj = objs[i];
             if (obj.IsObject()) {
@@ -201,7 +232,7 @@ string Controller::LookPic(rapidjson::Value &data) {
                 }
             }
         }
-        set <string> algorithm_list = {"helmet"};
+        set<string> algorithm_list = {"helmet"};
         thread t([this, cameraPics, algorithm_list]() {
             PictureHandle *pictureHandle = new PictureHandle(this->appconfig, this->yolov5, cameraPics, algorithm_list);
             pictureHandle->startPrediction();
@@ -211,7 +242,7 @@ string Controller::LookPic(rapidjson::Value &data) {
         result = "data is not array";
     }
     rapidjson::StringBuffer buf;
-    rapidjson::Writer <rapidjson::StringBuffer> writer(buf);
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
     writer.StartObject();
     writer.Key("code");
     writer.Int(200);
@@ -251,7 +282,7 @@ string Controller::SubVideo(rapidjson::Value &data) {
         }
     }
     rapidjson::StringBuffer buf;
-    rapidjson::Writer <rapidjson::StringBuffer> writer(buf);
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
     writer.StartObject();
     writer.Key("code");
     writer.Int(200);

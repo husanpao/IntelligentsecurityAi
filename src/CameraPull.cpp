@@ -5,8 +5,13 @@
 #include "CameraPull.h"
 
 CameraPull::~CameraPull() {
-    av_packet_free(&videoPacket);
+
     avformat_close_input(&fmtContext);
+    avcodec_free_context(&videoCodecContext);
+    if (frame) {
+        av_frame_free(&frame);
+    }
+    av_packet_free(&videoPacket);
     SPDLOG_INFO("[{}] ~CameraPull", this->id);
 }
 

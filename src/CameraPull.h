@@ -40,7 +40,6 @@ private:
     const AVCodec *videoCodec;
     AVCodecContext *videoCodecContext;
     AVFrame *frame;
-    AVFormatContext *outFmtContext;
     AVPacket *videoPacket;
     int videoIdx;
     int ret;

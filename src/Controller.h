@@ -30,6 +30,8 @@ public:
     string AddFace(rapidjson::Value &data);
 
     string LookPic(rapidjson::Value &data);
+    
+    string SnapPic(rapidjson::Value &data);
 
 private:
     void initLables();
