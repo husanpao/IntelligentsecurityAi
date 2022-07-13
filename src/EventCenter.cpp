@@ -78,21 +78,20 @@ void EventCenter::messageBus() {
 void EventCenter::faceMsgHandle(WaitSendFaceRecord waitSendFaceRecord) {
     SPDLOG_INFO("[{}] send face msg", waitSendFaceRecord.cameraid);
     try {
-        for (FaceResult face: waitSendFaceRecord.faceBoxes) {
+        for (FaceStruct face: waitSendFaceRecord.faceBoxes) {
             cv::Mat frame = waitSendFaceRecord.frame.clone();
-            while (face.pos.width > 1280 - face.pos.x) {
-                face.pos.width -= 10;
+            int left = face.left;
+            int top = face.top;
+            if (left > 20 && top > 20) {
+                left = left - 20;
+                top = top - 20;
             }
-            while (face.pos.height > 720 - face.pos.y) {
-                face.pos.height -= 10;
-            }
-            SPDLOG_INFO("x:{} y:{} w:{} h:{}", face.pos.x, face.pos.y, face.pos.width, face.pos.height);
-            cv::Rect rect(face.pos.x, face.pos.y, face.pos.width, face.pos.height);
+            cv::Rect rect(left, top, face.right - face.left + 40, face.bottom - face.top + 40);
             cv::Mat capture_img = frame(rect);
             long long time = gettimeofday_ms();
             cv::imwrite(fmt::format("{}\\{}\\{}_{}_face.jpg", savepath, getDayStr(), waitSendFaceRecord.cameraid,
                                     time), capture_img);
-            this->sendFaceMsg(face.uuid, fmt::format("{}/{}_{}_face.jpg", getDayStr(),
+            this->sendFaceMsg(face.name, fmt::format("{}/{}_{}_face.jpg", getDayStr(),
                                                      waitSendFaceRecord.cameraid,
                                                      time), waitSendFaceRecord.cameraid);
         }
@@ -104,7 +103,7 @@ void EventCenter::faceMsgHandle(WaitSendFaceRecord waitSendFaceRecord) {
     SPDLOG_INFO("[{}]send face msg end", waitSendFaceRecord.cameraid);
 }
 
-void EventCenter::sendFaceMsg(string uuid, string img, string cameraid) {
+void EventCenter::sendFaceMsg(string name, string img, string cameraid) {
     try {
         char body[1024];
         datetime_t now = datetime_now();
@@ -116,7 +115,7 @@ void EventCenter::sendFaceMsg(string uuid, string img, string cameraid) {
                       "        \"FIND_TIME\": \"%d-%d-%d %d:%d:%d\",\n"
                       "        \"USER_PIC\": \"%s%s\",\n"
                       "    }\n"
-                      "}", uuid.c_str(), cameraid.c_str(), now.year, now.month, now.day, now.hour,
+                      "}", hv::split(name, '_')[0].c_str(), cameraid.c_str(), now.year, now.month, now.day, now.hour,
                 now.min,
                 now.sec, static_host.c_str(), img.c_str());
         SPDLOG_INFO("[{}] face send body:{}", body, cameraid);
@@ -289,7 +288,7 @@ void EventCenter::DealEvent(Event event) {
         m_mutex2.lock();
         queue<cv::Mat> before(this->cameraVideo[event.cameraid].video1);
         m_mutex2.unlock();
-        for (FaceResult face: event.faceInfo) {
+        for (FaceStruct face: event.faceInfo) {
             if (cameraEvent[event.cameraid].faces.count(face.name) == 0) {
                 WaitSendFaceRecord waitSendFaceRecord;
                 waitSendFaceRecord.cameraid = event.cameraid;

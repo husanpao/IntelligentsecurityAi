@@ -9,7 +9,7 @@
 #include "CameraPull.h"
 #include "CameraPush.h"
 #include "YoloV5.h"
-#include "SeetaFace.h"
+#include "ArcFace.h"
 #include "EventCenter.h"
 
 class CameraHandle {
@@ -35,7 +35,7 @@ public:
     bool UpdateAlgorithm_list(set<string> algorithm_list);
 
 public:
-    SeetaFace *seetaFace;
+    ArcFace *facetool;
     bool predictionFlag;//是否启用识别
     bool renderFlag = false;//是否启用渲染
 private:
