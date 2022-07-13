@@ -366,23 +366,24 @@ cv::Mat YoloV5::drawRectangle(cv::Mat img, torch::Tensor rectangle, int thicknes
     return drawRectangle(img, rectangle, colors, labels, thickness);
 }
 
-void YoloV5::drawRectangleFace(cv::Mat img, int left, int top, int right, int bottom, string label, int thickness) {
+void YoloV5::drawRectangleFace(cv::Mat img, int x, int y, int w, int h, string label, int thickness) {
     //kuang  wei zhang
-    string text = hv::split(label, '_')[1];
-    cv::rectangle(img, cv::Point(left, top),
-                  cv::Point(right, bottom),
+    string text = UnicodeToUtf8(StringToWString(label));
+
+    cv::rectangle(img, cv::Point(x, y),
+                  cv::Point(x + w, y + h),
                   cv::Scalar(255, 153, 0), thickness);
     int baseline = 0;
     cv::Size size = cv::getTextSize(text, 1, 1, thickness, &baseline);
     //画标签框beijing
     int width = size.width - size.width / 25 * 5;
-    cv::rectangle(img, cv::Point(left, top - 20),
-                  cv::Point(left + width, top),
+    cv::rectangle(img, cv::Point(x, y - 20),
+                  cv::Point(x + width, y),
                   cv::Scalar(255, 153, 0), -1, cv::LINE_AA);
     cv::Ptr<cv::freetype::FreeType2> ft2 = cv::freetype::createFreeType2();
     ft2->loadFontData("./simsun.ttc", 0);
     //wenzi
-    ft2->putText(img, text, cv::Point(left, top - 2), 20,
+    ft2->putText(img, text, cv::Point(x, y - 2), 20,
                  CV_RGB(102, 255, 255), -1, 8, true);
 }
 

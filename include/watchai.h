@@ -18,6 +18,7 @@
 #include "hv/http_client.h"
 #include "hv/requests.h"
 #include "thread_pool.hpp"
+#include "seeta/Common/CStruct.h"
 
 extern "C" {
 #include "libavutil/avutil.h"
@@ -44,16 +45,15 @@ struct PredictionResult {
     EventInfo eventInfo;
 };
 typedef std::vector<PredictionResult> PDRV;
-struct FaceStruct {
-    int seq;
-    int idcode;
+
+struct FaceResult {
+    int64_t id;
     string name;
-    int left;
-    int top;
-    int right;
-    int bottom;
+    string uuid;
+    SeetaRect pos;
+    float score;
 };
-typedef std::vector<FaceStruct> FSRV;
+typedef std::vector<FaceResult> FSRV;
 
 cv::Mat avframeToCvmat(const AVFrame *frame, AVPixelFormat format, int width, int height);
 
@@ -64,7 +64,9 @@ int httpDownload(const char *url, const char *filepath);
 std::wstring Utf8ToUnicode(const std::string &strUTF8);
 
 std::string WStringToString(const std::wstring &wstr);
+std::string UnicodeToUtf8(const std::wstring &strUnicode);
 
+std::wstring StringToWString(const std::string &str);
 bool intersect(PredictionResult a, PredictionResult b);
 
 float overlapRate(PredictionResult a, PredictionResult b);
