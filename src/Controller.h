@@ -8,7 +8,7 @@
 #include "watchai.h"
 #include "CameraHandle.h"
 #include "YoloV5.h"
-#include "SeetaFace.h"
+#include "ArcFace.h"
 
 struct Player {
     string cameraid;
@@ -30,7 +30,7 @@ public:
     string AddFace(rapidjson::Value &data);
 
     string LookPic(rapidjson::Value &data);
-
+    
     string SnapPic(rapidjson::Value &data);
 
 private:
@@ -40,7 +40,7 @@ public:
     std::map<string, Player *> players;
     AppConfig *appconfig;
     YoloV5 *yolov5;
-    SeetaFace *seetaFace;
+    ArcFace *facetool;
     EventCenter *eventCenter;
 };
 
