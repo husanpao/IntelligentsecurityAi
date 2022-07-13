@@ -39,7 +39,7 @@ struct ResultCache {
     string cameraid;
     cv::Mat frame;
     map<string, MsgEvent> events;
-    map<string, FaceStruct> faces;
+    map<string, FaceResult> faces;
 };
 struct CameraVideo {
     Queue video1;
@@ -58,8 +58,11 @@ public:
     void pushQueue(cv::Mat frame, string cameraid);
 
     void removeCamera(string cameraid);
+
     string getDayStr();
+
     void sendEventMsg(string event, string img, string video, string cameraid);
+
 private:
     void messageBus();
 
@@ -68,12 +71,9 @@ private:
     void eventMsgHandle(WaitSendEventRecord waitSendRecord, queue<cv::Mat> frames);
 
 
-
     void faceMsgHandle(WaitSendFaceRecord waitSendFaceRecord);
 
-    void sendFaceMsg(string name, string img, string cameraid);
-
-
+    void sendFaceMsg(string uuid, string img, string cameraid);
 
 
 private:

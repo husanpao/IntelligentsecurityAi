@@ -528,7 +528,7 @@ void CameraHandle::Handle(cv::Mat frame) {
         auto face_frame = frame.clone();
         this->taskPool->push_task([this, face_frame]() {
             map<string, PDRV> events;
-            this->faceBoxes = this->facetool->Run(face_frame);
+            this->faceBoxes = this->seetaFace->Compare(face_frame);
             if (this->faceBoxes.size() > 0) {
                 this->eventCenter->HandleEvent(events, faceBoxes, this->id, gettimeofday_ms(), face_frame);
             }
@@ -588,7 +588,7 @@ void CameraHandle::Handle(cv::Mat frame) {
     this->eventCenter->pushQueue(frame.clone(), this->id);
     if (this->renderFlag) {
         for (auto face: this->faceBoxes) {
-            this->yolo->drawRectangleFace(frame, face.left, face.top, face.right, face.bottom, face.name);
+            this->yolo->drawRectangleFace(frame, face.pos.x, face.pos.y, face.pos.width, face.pos.height, face.name);
         }
         this->cameraPush->pusher(frame, this->pushIdx++);
     }

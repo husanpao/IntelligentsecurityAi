@@ -12,12 +12,9 @@ Controller::Controller(AppConfig *appconfig) {
     this->appconfig = appconfig;
     initLables();
     //人脸识别SDK初始化
-    ArcFace *face = new ArcFace(appconfig->faceKey, appconfig->facehold);
-    thread t([face]() {
-        face->Init();
-    });
-    t.detach();
-    this->facetool = face;
+    SeetaFace *face = new SeetaFace("./seeta", appconfig->facehold);
+    face->Load();
+    this->seetaFace = face;
     bool isCuda = torch::cuda::is_available();
     this->yolov5 = new YoloV5(this->appconfig->weight, isCuda);
     this->yolov5->prediction(torch::rand({1, 3, 640, 640}));
@@ -55,12 +52,14 @@ string Controller::AddFace(rapidjson::Value &data) {
         string faceimage = data["FACEIMAGE"].GetString();
         int state = data["STATE"].GetInt();
         string nname = WStringToString(Utf8ToUnicode(name));
+        faceimage = WStringToString(Utf8ToUnicode(faceimage));
         string fullpath = hv::replace(this->appconfig->api_host, "/api", "");
+        string temp_img = fmt::format("./faces/{}.jpg", userid);
         int ret = httpDownload(fullpath.append(faceimage).c_str(),
-                               fmt::format("faces/{}_{}.jpg", userid, nname).c_str());
+                               temp_img.c_str());
         result = (ret == 0 ? "" : "Add Face Feature Error");
         if (result == "") {
-            this->facetool->registerSingle(fmt::format("{}_{}", userid, nname));
+            this->seetaFace->Register(temp_img, nname, userid);
         }
     }
     rapidjson::StringBuffer buf;
@@ -119,7 +118,7 @@ string Controller::MAVideo(rapidjson::Value &data) {
                                                                           algorithm_list, this->yolov5,
                                                                           this->eventCenter);
 
-                            cameraHandle->facetool = this->facetool;
+                            cameraHandle->seetaFace = this->seetaFace;
                             player->cameraHandle = cameraHandle;
                             cameraHandle->startPrediction();
                             delete cameraHandle;
