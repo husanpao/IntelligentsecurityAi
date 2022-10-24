@@ -1,4 +1,4 @@
-ï»¿
+
 #include "hv/HttpServer.h"
 #include "CameraPull.h"
 #include "config.h"
@@ -9,7 +9,7 @@
 #include "hv/EventLoop.h"
 #include "crash_exception.h"
 
-#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE//å¿…é¡»å®šä¹‰è¿™ä¸ªå®,æ‰èƒ½è¾“å‡ºæ–‡ä»¶åå’Œè¡Œå·
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE//±ØĞë¶¨ÒåÕâ¸öºê,²ÅÄÜÊä³öÎÄ¼şÃûºÍĞĞºÅ
 using namespace hv;
 
 
@@ -26,13 +26,13 @@ void FFMPEG_LOG(void *ptr, int level, const char *fmt, va_list vl) {
 }
 
 void initconfig(string level, int port) {
-    //è®¾ç½®libhvæ—¥å¿—é…ç½®
+    //ÉèÖÃlibhvÈÕÖ¾ÅäÖÃ
     hlog_set_file(fmt::format("logs/network_{}", port).c_str());
     hlog_set_remain_days(1);
-    //è®¾ç½®ffmpeg
-//    av_log_set_level(AV_LOG_ERROR); //è®¾ç½®æ—¥å¿—çº§åˆ«
-    av_log_set_callback(FFMPEG_LOG);  // è®¾ç½®è‡ªå®šä¹‰çš„æ—¥å¿—è¾“å‡ºæ–¹æ³•
-    //è®¾ç½®ç¨‹åºæ—¥å¿—é…ç½®
+    //ÉèÖÃffmpeg
+//    av_log_set_level(AV_LOG_ERROR); //ÉèÖÃÈÕÖ¾¼¶±ğ
+    av_log_set_callback(FFMPEG_LOG);  // ÉèÖÃ×Ô¶¨ÒåµÄÈÕÖ¾Êä³ö·½·¨
+    //ÉèÖÃ³ÌĞòÈÕÖ¾ÅäÖÃ
     std::vector<spdlog::sink_ptr> sinks;
     sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_st>());
     sinks.push_back(
@@ -73,7 +73,7 @@ static void onTimer(TimerID timerID, string url, int port) {
 
 int main(int argc, char *argv[]) {
     SetUnhandledExceptionFilter(ExceptionFilter);
-    SetConsoleTitle("æ™ºèƒ½å®‰ç›‘ç®¡æ§å¹³å°-20220616"); // è®¾ç½®çª—å£æ ‡é¢˜
+    SetConsoleTitle("ÖÇÄÜ°²¼à¹Ü¿ØÆ½Ì¨-20220716"); // ÉèÖÃ´°¿Ú±êÌâ
     config *c = new config("./config.conf");
     int port = c->readInt("APP", "port", "1360");
     if (argc > 1) {
@@ -145,10 +145,11 @@ int main(int argc, char *argv[]) {
                     msgText = "LookPic MSG";
                 } else if (msgType == 206) {
                     result = control->SnapPic(dom["data"]);
-
                     msgText = "SnapPic MSG";
                 } else {
-                    result = "{\"code\":500,\"message\":\"error\",\"data\":\"UNKnow msgType\"}";
+                    SPDLOG_INFO("type:{}", msgType);
+                    result = "{\"code\":500,\"message\":\"error\",\"data\":\"unknow 123 msgType " + to_string(msgType) +
+                             " \"}";
                 }
                 SPDLOG_INFO("msgType:{},msgText:{},result:{}", msgType, msgText, result);
                 return ctx->send(result, ctx->type());

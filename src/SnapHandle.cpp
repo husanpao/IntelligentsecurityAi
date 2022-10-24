@@ -39,9 +39,10 @@ SnapHandle::SnapHandle(AppConfig *appConfig, YoloV5 *yolo, string id, string url
 
 void SnapHandle::startPrediction() {
     this->predictionFlag = true;
-    thread *handle = new thread([this] {
-        cv::waitKey(100);
+    bool threadAlive = false;
+    thread *handle = new thread([this, &threadAlive] {
         SPDLOG_INFO("[{}] Handle start ", this->id);
+        threadAlive = true;
         while (this->predictionFlag) {
             auto frame = this->cameraPull->get();
             if (frame.empty()) {
@@ -52,15 +53,20 @@ void SnapHandle::startPrediction() {
             this->cameraPull->stop();
             break;
         }
+        threadAlive = false;
         SPDLOG_INFO("[{}] Handle end ", this->id);
     });
     handle->detach();
     SPDLOG_INFO("[{}] start prediction ", this->id);
     this->cameraPull->start();
     this->predictionFlag = false;
+    while (threadAlive) {
+        SPDLOG_INFO("[{}] waiting snap thread stop. ", this->id);
+        cv::waitKey(100);
+    }
     delete handle;
+    SPDLOG_INFO("[{}] send snapmsg ", this->id);
     sendEventMsg();
-    cv::waitKey(5);
     SPDLOG_INFO("[{}] end prediction ", this->id);
 }
 

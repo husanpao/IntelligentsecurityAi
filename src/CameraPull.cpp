@@ -5,14 +5,17 @@
 #include "CameraPull.h"
 
 CameraPull::~CameraPull() {
-
+    SPDLOG_INFO("[{}] ~CameraPull start", this->id);
     avformat_close_input(&fmtContext);
-    avcodec_free_context(&videoCodecContext);
+    avformat_free_context(fmtContext);
+    if (this->videoCodecContext != nullptr) {
+        avcodec_free_context(&videoCodecContext);
+    }
     if (frame) {
         av_frame_free(&frame);
     }
     av_packet_free(&videoPacket);
-    SPDLOG_INFO("[{}] ~CameraPull", this->id);
+    SPDLOG_INFO("[{}] ~CameraPull end", this->id);
 }
 
 CameraPull::CameraPull(string url, string id) : url(url), id(id) {
@@ -24,6 +27,7 @@ CameraPull::CameraPull(string url, string id) : url(url), id(id) {
     this->videoPacket = av_packet_alloc();
     this->frame = av_frame_alloc();
     this->videoIdx = -1;
+    this->videoCodecContext = nullptr;
     this->width = 1280;
     this->height = 720;
 }
@@ -111,6 +115,11 @@ int CameraPull::start() {
 
 bool CameraPull::stop() {
     this->flag = false;
+    m_mutex.lock();
+    while (!queue.empty()) {
+        queue.pop();
+    }
+    m_mutex.unlock();
     return true;
 }
 

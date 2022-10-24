@@ -628,22 +628,28 @@ void CameraHandle::startPrediction() {
         mkdir(temp.c_str());
     }
     this->predictionFlag = true;
-    thread handle([this] {
+    bool handleAlive = false;
+    thread handle([this, &handleAlive] {
         cv::waitKey(100);
         SPDLOG_INFO("[{}] Handle start ", this->id);
+        handleAlive = true;
         while (this->predictionFlag) {
             if (this->cameraPull->flag) {
                 this->Handle(this->cameraPull->get());
             }
             cv::waitKey(1);
         }
+        handleAlive = false;
         SPDLOG_INFO("[{}] Handle end ", this->id);
     });
     handle.detach();
     SPDLOG_INFO("[{}] start prediction ", this->id);
     this->cameraPull->start();
     this->predictionFlag = false;
-    cv::waitKey(20000);
+    while (handleAlive) {
+        SPDLOG_INFO("[{}] waiting handle thread end. ", this->id);
+        cv::waitKey(100);
+    }
     if (hv::startswith(this->id, "offline")) {
         this->EndVideo();
     }

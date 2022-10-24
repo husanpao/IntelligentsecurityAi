@@ -198,6 +198,7 @@ string Controller::SnapPic(rapidjson::Value &data) {
                                                         algorithm_list);
                 snapHandle->startPrediction();
                 delete snapHandle;
+                SPDLOG_INFO("[{}] delete snapHandle ", camera_code);
             });
             t.detach();
         }
